@@ -86,7 +86,7 @@
 
 						if (angular.isNumber(value)) {
 							// Milliseconds since the epoch
-							value = new Date(value);
+							value = moment(value);
 						}
 						// else assume the given value is already a date
 
@@ -142,7 +142,7 @@
 
 				if (!isNaN(parseFloat(value)) && isFinite(value)) {
 					// Milliseconds since the epoch
-					value = new Date(parseInt(value, 10));
+					value = moment(parseInt(value, 10));
 				}
 
 				var momentInstance = moment(value);
@@ -162,7 +162,7 @@
 
 				if (!isNaN(parseFloat(value)) && isFinite(value)) {
 					// Milliseconds since the epoch
-					value = new Date(parseInt(value, 10));
+					value = moment(parseInt(value, 10));
 				}
 
 				var momentInstance = moment(value);
