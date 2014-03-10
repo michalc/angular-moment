@@ -29,6 +29,9 @@
 			timezone: '' // e.g. 'Europe/London'
 		})
 		.constant('amTimeAgoConfig', { withoutSuffix: false})
+	  .factory('moment', function ($window) {
+	    return $window.moment;
+	  })
 		.directive('amTimeAgo', ['$window', 'amTimeAgoConfig', function ($window, amTimeAgoConfig) {
 
 			return function (scope, element, attr) {

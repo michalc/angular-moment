@@ -391,3 +391,22 @@ describe('module angularMoment', function () {
 		});
 	});
 });
+
+describe('moment factory', function () {
+	var moment;
+	var fake = {};
+
+	beforeEach(module('angularMoment', function($provide) {
+		$provide.value('$window', {
+			'moment': fake
+		});
+	}));
+
+	beforeEach(inject(function (_moment_) {
+		moment = _moment_;
+	}));
+
+	it('should return $window.moment', function () {
+		expect(moment).toBe(fake);
+	});
+});
