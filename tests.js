@@ -7,7 +7,7 @@
 'use strict';
 
 describe('module angularMoment', function () {
-	var $rootScope, $compile, $window, $filter, amTimeAgoConfig, originalTimeAgoConfig, angularMomentConfig,
+	var $rootScope, $compile, $window, $filter, $timeout, amTimeAgoConfig, originalTimeAgoConfig, angularMomentConfig,
 		originalAngularMomentConfig, amMoment;
 
 	beforeEach(module('angularMoment'));
@@ -17,6 +17,7 @@ describe('module angularMoment', function () {
 		$compile = $injector.get('$compile');
 		$window = $injector.get('$window');
 		$filter = $injector.get('$filter');
+		$timeout = $injector.get('$timeout');
 		amMoment = $injector.get('amMoment');
 		amTimeAgoConfig = $injector.get('amTimeAgoConfig');
 		angularMomentConfig = $injector.get('angularMomentConfig');
@@ -102,12 +103,12 @@ describe('module angularMoment', function () {
 			expect(element.text()).toBe('a few seconds ago');
 
 			var waitsInterval = setInterval(function () {
-				// Wait until $rootScope.date is more than 45 seconds old
-				if (new Date().getTime() - $rootScope.testDate.getTime() < 45000) {
+				if (new Date().getTime() - $rootScope.testDate.getTime() <= 45000) {
 					return;
 				}
 
 				clearInterval(waitsInterval);
+				$timeout.flush();
 				$rootScope.$digest();
 				expect(element.text()).toBe('a minute ago');
 				done();
@@ -131,9 +132,10 @@ describe('module angularMoment', function () {
 			$rootScope.$digest();
 			expect(element.text()).toBe('a few seconds ago');
 			$rootScope.testDate = '';
-			spyOn($window, 'clearTimeout').and.callThrough();
+			spyOn($timeout, 'cancel').and.callThrough();
+			$timeout.flush();
 			$rootScope.$digest();
-			expect($window.clearTimeout).toHaveBeenCalled();
+			expect($timeout.cancel).toHaveBeenCalled();
 			expect(element.text()).toBe('');
 		});
 
@@ -154,9 +156,9 @@ describe('module angularMoment', function () {
 			var element = angular.element('<span am-time-ago="testDate"></span>');
 			element = $compile(element)(scope);
 			$rootScope.$digest();
-			spyOn($window, 'clearTimeout').and.callThrough();
+			spyOn($timeout, 'cancel').and.callThrough();
 			scope.$destroy();
-			expect($window.clearTimeout).toHaveBeenCalled();
+			expect($timeout.cancel).toHaveBeenCalled();
 		});
 
 		it('should generate a time string without suffix when configured to do so', function () {

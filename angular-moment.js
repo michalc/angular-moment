@@ -32,7 +32,7 @@
 	  .factory('moment', function ($window) {
 	    return $window.moment;
 	  })
-		.directive('amTimeAgo', ['$window', 'moment', 'amTimeAgoConfig', function ($window, moment, amTimeAgoConfig) {
+		.directive('amTimeAgo', ['$timeout', 'moment', 'amTimeAgoConfig', function ($timeout, moment, amTimeAgoConfig) {
 
 			return function (scope, element, attr) {
 				var activeTimeout = null;
@@ -41,10 +41,7 @@
 				var withoutSuffix = amTimeAgoConfig.withoutSuffix;
 
 				function cancelTimer() {
-					if (activeTimeout) {
-						$window.clearTimeout(activeTimeout);
-						activeTimeout = null;
-					}
+					$timeout.cancel(activeTimeout);
 				}
 
 				function updateTime(momentInstance) {
@@ -59,9 +56,9 @@
 						secondsUntilUpdate = 300;
 					}
 
-					activeTimeout = $window.setTimeout(function () {
+					activeTimeout = $timeout(function () {
 						updateTime(momentInstance);
-					}, secondsUntilUpdate * 1000);
+					}, secondsUntilUpdate * 1000, false);
 				}
 
 				function updateMoment() {
