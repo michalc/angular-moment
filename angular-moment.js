@@ -40,26 +40,33 @@
 					var currentValue;
 					var currentFormat;
 					var withoutSuffix = amTimeAgoConfig.withoutSuffix;
+					var updateTimes = {
+						180: 300,
+						60: 30,
+						1: 1
+					};
 
 					function cancelTimer() {
 						$timeout.cancel(activeTimeout);
 					}
 
-					function updateTime(momentInstance) {
-						element.text(momentInstance.fromNow(withoutSuffix));
+					function waitUntilUpdateRequired(momentInstance) {
 						var howOld = moment().diff(momentInstance, 'minute');
 						var secondsUntilUpdate = 3600;
-						if (howOld < 1) {
-							secondsUntilUpdate = 1;
-						} else if (howOld < 60) {
-							secondsUntilUpdate = 30;
-						} else if (howOld < 180) {
-							secondsUntilUpdate = 300;
-						}
+						angular.forEach(updateTimes, function(wait, maxCurrent) {
+							if (howOld < maxCurrent) {
+								secondsUntilUpdate = wait;
+							}
+						});
+						activeTimeout = $timeout(angular.noop, secondsUntilUpdate * 1000);
+						return activeTimeout;
+					}
 
-						activeTimeout = $timeout(function () {
-							updateTime(momentInstance);
-						}, secondsUntilUpdate * 1000, false);
+					function updateTime(momentInstance) {
+						element.text(momentInstance.fromNow(withoutSuffix));
+						return waitUntilUpdateRequired().then(function() {
+							return updateTime(momentInstance);
+						});
 					}
 
 					function updateMoment() {
