@@ -6,6 +6,25 @@
 
 'use strict';
 
+describe('moment factory', function () {
+	var moment;
+	var fake = {};
+
+	beforeEach(module('angularMoment', function($provide) {
+		$provide.value('$window', {
+			'moment': fake
+		});
+	}));
+
+	beforeEach(inject(function (_moment_) {
+		moment = _moment_;
+	}));
+
+	it('should return $window.moment', function () {
+		expect(moment).toBe(fake);
+	});
+});
+
 describe('module angularMoment', function () {
 	var $rootScope, $compile, $window, $filter, $timeout, amTimeAgoConfig, originalTimeAgoConfig, angularMomentConfig,
 		originalAngularMomentConfig, amMoment;
@@ -391,24 +410,5 @@ describe('module angularMoment', function () {
 		it('should have an empty timezone value by default', function () {
 			expect(angularMomentConfig.timezone).toBe('');
 		});
-	});
-});
-
-describe('moment factory', function () {
-	var moment;
-	var fake = {};
-
-	beforeEach(module('angularMoment', function($provide) {
-		$provide.value('$window', {
-			'moment': fake
-		});
-	}));
-
-	beforeEach(inject(function (_moment_) {
-		moment = _moment_;
-	}));
-
-	it('should return $window.moment', function () {
-		expect(moment).toBe(fake);
 	});
 });
