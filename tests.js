@@ -41,6 +41,10 @@ describe('amTimeAgo Directive', function() {
 		return mockMoment;
 	}
 
+	var setMockMomentFactory = function(newMockMomentFactory) {
+		mockMomentFactory = newMockMomentFactory;
+	}
+
 	var amTimeAgoElement = function(date) {;
 		$rootScope.date = date;
 		var element = angular.element('<span am-time-ago="date"></span>');
@@ -98,17 +102,39 @@ describe('amTimeAgo Directive', function() {
 		expect(element.text()).toBe(changedDate);
 	});
 
-	angular.forEach([null, undefined, ''], function(empty) {
-		it('should not throw an exception for date of ' + empty, function () {
+	var empties = [null, undefined, ''];
+	angular.forEach(empties, function(empty) {
+		it('should not throw an exception for date of ' + angular.toJson(empty), function () {
 			var mockDate = empty;
 			expect(function() {
 				var element = amTimeAgoElement(mockDate);
 			}).not.toThrow();
 		});
-		it('should show empty date for date of ' + empty, function () {
+		it('should show empty string for date of ' + angular.toJson(empty), function () {
 			var mockDate = empty;
 			var element = amTimeAgoElement(mockDate);
 			expect(element.text()).toBe('');
+		});
+	});
+
+	angular.forEach(empties, function(empty) {
+		describe('when date is ' + angular.toJson(empty), function() {
+			var mockMoment, mockDate;
+
+			beforeEach(function() {
+				mockDate = empty;
+				mockMoment = new MockMoment();
+				spyOn(mockMoment, 'fromNow');
+				setMockMomentFactory(function(dateOrMoment, moment) {
+					return mockMoment;
+				});
+			})
+
+			it('should not have called moment().fromNow()', function() {
+				var mockDate = empty;
+				var element = amTimeAgoElement(mockDate);
+				expect(mockMoment.fromNow).not.toHaveBeenCalled();
+			});
 		});
 	});
 });
