@@ -49,6 +49,11 @@ describe('amTimeAgo Directive', function() {
 		return element;
 	}
 
+	var simulateDateChange = function(newDate) {
+		$rootScope.date = newDate;
+		$rootScope.$digest();
+	}
+
 	beforeEach(module('angularMoment', function($provide) {
 		$provide.value('$window', {
 			'moment': function(dateOrMoment, format) {
@@ -79,6 +84,18 @@ describe('amTimeAgo Directive', function() {
 		}
 		var element = amTimeAgoElement(mockFromNowText);
 		expect(element.text()).toBe(mockFromNowText);
+	});
+
+	it('should update the value if date changes on scope', function () {
+		var mockDate = 'test-initial-date';
+		var changedDate = 'test-changed-date';
+		MockMoment.prototype.fromNow = function() {
+			return mockDate;
+		}
+		var element = amTimeAgoElement(mockDate);
+		mockDate = changedDate;
+		simulateDateChange(mockDate);
+		expect(element.text()).toBe(changedDate);
 	});
 });
 
@@ -120,26 +137,6 @@ describe('module angularMoment', function () {
 	});
 
 	describe('am-time-ago directive', function () {
-		it('should parse correctly numeric dates as milliseconds since the epoch', function () {
-			$rootScope.testDate = new Date().getTime();
-			var element = angular.element('<div am-time-ago="testDate"></div>');
-			element = $compile(element)($rootScope);
-			$rootScope.$digest();
-			expect(element.text()).toBe('a few seconds ago');
-		});
-
-		it('should update the value if date changes on scope', function () {
-			var today = new Date();
-			$rootScope.testDate = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate()).getTime();
-			var element = angular.element('<div am-time-ago="testDate"></div>');
-			element = $compile(element)($rootScope);
-			$rootScope.$digest();
-			expect(element.text()).toBe('a year ago');
-			$rootScope.testDate = new Date();
-			$rootScope.$digest();
-			expect(element.text()).toBe('a few seconds ago');
-		});
-
 		it('should update the span text as time passes', function (done) {
 			$rootScope.testDate = new Date(new Date().getTime() - 44000);
 			var element = angular.element('<div am-time-ago="testDate"></div>');
