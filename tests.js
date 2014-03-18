@@ -97,6 +97,20 @@ describe('amTimeAgo Directive', function() {
 		simulateDateChange(mockDate);
 		expect(element.text()).toBe(changedDate);
 	});
+
+	angular.forEach([null, undefined, ''], function(empty) {
+		it('should not throw an exception for date of ' + empty, function () {
+			var mockDate = empty;
+			expect(function() {
+				var element = amTimeAgoElement(mockDate);
+			}).not.toThrow();
+		});
+		it('should show empty date for date of ' + empty, function () {
+			var mockDate = empty;
+			var element = amTimeAgoElement(mockDate);
+			expect(element.text()).toBe('');
+		});
+	});
 });
 
 
@@ -155,16 +169,6 @@ describe('module angularMoment', function () {
 				expect(element.text()).toBe('a minute ago');
 				done();
 			}, 50);
-		});
-
-		it('should handle undefined data', function () {
-			$rootScope.testDate = null;
-			var element = angular.element('<div am-time-ago="testDate"></div>');
-			element = $compile(element)($rootScope);
-			var digest = function () {
-				$rootScope.$digest();
-			};
-			expect(digest).not.toThrow();
 		});
 
 		it('should remove the element text and cancel the timer when an empty string is given (#15)', function () {
