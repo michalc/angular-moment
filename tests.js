@@ -120,39 +120,6 @@ describe('module angularMoment', function () {
 	});
 
 	describe('am-time-ago directive', function () {
-		it('should change the text of the element to "a few seconds ago" when given current time', function () {
-			$rootScope.testDate = new Date();
-			var element = angular.element('<span am-time-ago="testDate"></span>');
-			element = $compile(element)($rootScope);
-			$rootScope.$digest();
-			expect(element.text()).toBe('a few seconds ago');
-		});
-
-		it('should change the text of the div to "3 minutes ago" when given a date 3 minutes ago', function () {
-			$rootScope.testDate = new Date(new Date().getTime() - 3 * 60 * 1000);
-			var element = angular.element('<div am-time-ago="testDate"></div>');
-			element = $compile(element)($rootScope);
-			$rootScope.$digest();
-			expect(element.text()).toBe('3 minutes ago');
-		});
-
-		it('should change the text of the div to "2 hours ago" when given a date 2 hours ago', function () {
-			$rootScope.testDate = new Date(new Date().getTime() - 2 * 60 * 60 * 1000);
-			var element = angular.element('<div am-time-ago="testDate"></div>');
-			element = $compile(element)($rootScope);
-			$rootScope.$digest();
-			expect(element.text()).toBe('2 hours ago');
-		});
-
-		it('should change the text of the div to "one year ago" when given a date one year ago', function () {
-			var today = new Date();
-			$rootScope.testDate = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
-			var element = angular.element('<div am-time-ago="testDate"></div>');
-			element = $compile(element)($rootScope);
-			$rootScope.$digest();
-			expect(element.text()).toBe('a year ago');
-		});
-
 		it('should parse correctly numeric dates as milliseconds since the epoch', function () {
 			$rootScope.testDate = new Date().getTime();
 			var element = angular.element('<div am-time-ago="testDate"></div>');
