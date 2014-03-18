@@ -25,7 +25,66 @@ describe('moment factory', function () {
 	});
 });
 
+describe('amTimeAgo Directive', function() {
+	var $rootScope, $compile, mockMomentFactory, moment;
+
+	/* Empty definitions so each test can override */
+	function MockMoment(arg1, arg2) {
+		this._arg1 = arg1;
+		this._arg2 = arg2;
+	};
+	MockMoment.prototype.fromNow = function() {};
+	MockMoment.prototype.diff = function() {};
+
+	mockMomentFactory = function(dateOrMoment, format) {
+		var mockMoment = new MockMoment(dateOrMoment, format);
+		return mockMoment;
+	}
+
+	var amTimeAgoElement = function(date) {;
+		$rootScope.date = date;
+		var element = angular.element('<span am-time-ago="date"></span>');
+		element = $compile(element)($rootScope);
+		$rootScope.$digest();
+		return element;
+	}
+
+	beforeEach(module('angularMoment', function($provide) {
+		$provide.value('$window', {
+			'moment': function(dateOrMoment, format) {
+				return mockMomentFactory(dateOrMoment, format);
+			}
+		});
+	}));
+
+  beforeEach(inject(function (_$rootScope_, _$compile_, _moment_) {
+    moment = _moment_;
+    $rootScope = _$rootScope_;
+    $compile = _$compile_;
+  }));
+
+	it('should change the text of the element to moment([anything non null]).fromNow()', function () {
+		var mockFromNowText = 'test-from-now-text';
+		MockMoment.prototype.fromNow = function() {
+			return mockFromNowText;
+		}
+		var element = amTimeAgoElement({});
+		expect(element.text()).toBe(mockFromNowText);
+	});
+
+	it('should change the text of the element to moment(passedDate).fromNow()', function () {
+		var mockFromNowText = 'test-from-now-text';
+		MockMoment.prototype.fromNow = function() {
+			return this._arg1;
+		}
+		var element = amTimeAgoElement(mockFromNowText);
+		expect(element.text()).toBe(mockFromNowText);
+	});
+});
+
+
 describe('module angularMoment', function () {
+
 	var $rootScope, $compile, $window, $filter, $timeout, amTimeAgoConfig, originalTimeAgoConfig, angularMomentConfig,
 		originalAngularMomentConfig, amMoment;
 
