@@ -83,11 +83,6 @@
 							}
 							return;
 						}
-
-						if (angular.isNumber(value)) {
-							// Milliseconds since the epoch
-							value = moment(value);
-						}
 						// else assume the given value is already a date
 
 						currentValue = value;
