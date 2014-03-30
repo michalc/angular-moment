@@ -54,7 +54,7 @@
 						var howOld = moment().diff(momentInstance, 'minute');
 						var secondsUntilUpdate = 3600;
 						angular.forEach(updateTimes, function(wait, maxCurrent) {
-							if (howOld < maxCurrent) {
+							if (howOld <= maxCurrent) {
 								secondsUntilUpdate = wait;
 							}
 						});

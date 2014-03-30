@@ -26,7 +26,7 @@ describe('moment factory', function () {
 });
 
 describe('amTimeAgo Directive', function() {
-	var $rootScope, $compile, mockMomentFactory, moment;
+	var $rootScope, $compile, $timeout, mockMomentFactory, moment;
 
 	/* Empty definitions so each test can override */
 	function MockMoment(arg1, arg2) {
@@ -45,11 +45,12 @@ describe('amTimeAgo Directive', function() {
 		mockMomentFactory = newMockMomentFactory;
 	}
 
-	var amTimeAgoElement = function(date) {;
-		$rootScope.date = date;
-		var element = angular.element('<span am-time-ago="date"></span>');
-		element = $compile(element)($rootScope);
-		$rootScope.$digest();
+	var amTimeAgoElement = function(date, initialText, initialScope) {
+		var scope = initialScope || $rootScope;
+		scope.date = date;
+		var element = angular.element('<span am-time-ago="date">' + (initialText || '') +'</span>');
+		element = $compile(element)(scope);
+		scope.$digest();
 		return element;
 	}
 
@@ -66,10 +67,11 @@ describe('amTimeAgo Directive', function() {
 		});
 	}));
 
-  beforeEach(inject(function (_$rootScope_, _$compile_, _moment_) {
+  beforeEach(inject(function (_$rootScope_, _$compile_, _$timeout_, _moment_) {
     moment = _moment_;
     $rootScope = _$rootScope_;
     $compile = _$compile_;
+    $timeout = _$timeout_;
   }));
 
 	it('should change the text of the element to moment([anything non null]).fromNow()', function () {
@@ -115,16 +117,44 @@ describe('amTimeAgo Directive', function() {
 			var element = amTimeAgoElement(mockDate);
 			expect(element.text()).toBe('');
 		});
+		it('should show empty string when date changed from valid to ' + angular.toJson(empty), function() {
+			var mockDate = 'test-date';
+			MockMoment.prototype.fromNow = function() {
+				return mockDate;
+			}
+			var element = amTimeAgoElement({});
+			expect(element.text()).toBe(mockDate);
+			simulateDateChange(empty);
+			expect(element.text()).toBe('');
+		});
+		it('should cancel timer when date changed from valid to ' + angular.toJson(empty), function() {
+			var element = amTimeAgoElement({});
+			spyOn($timeout, 'cancel').and.callThrough();
+			simulateDateChange(empty);
+			expect($timeout.cancel).toHaveBeenCalled();
+		});
+		it('should not change the contents of the element until a date changed from ' + angular.toJson(empty), function() {
+			var mockDate = 'test-date';
+			var initialText = 'Initial contents';
+			MockMoment.prototype.fromNow = function() {
+				return mockDate;
+			}			
+			var element = amTimeAgoElement(empty, initialText);
+			expect(element.text()).toBe(initialText);
+			simulateDateChange({});
+			expect(element.text()).toBe(mockDate);
+		});
 	});
 
 	angular.forEach(empties, function(empty) {
 		describe('when date is ' + angular.toJson(empty), function() {
-			var mockMoment, mockDate;
+			var mockMoment, mockDate, oldFactory;
 
 			beforeEach(function() {
 				mockDate = empty;
 				mockMoment = new MockMoment();
 				spyOn(mockMoment, 'fromNow');
+				oldFactory = mockMomentFactory;
 				setMockMomentFactory(function(dateOrMoment, moment) {
 					return mockMoment;
 				});
@@ -135,7 +165,66 @@ describe('amTimeAgo Directive', function() {
 				var element = amTimeAgoElement(mockDate);
 				expect(mockMoment.fromNow).not.toHaveBeenCalled();
 			});
+
+			afterEach(function() {
+				setMockMomentFactory(oldFactory);
+			});
 		});
+	});
+	describe('timeout behaviour', function() {
+		var testTimePassed = function(minutesAgo, whenChangeTime) {
+			var originalMockFromNowText = 'original-from-now-text';
+			var newMockFromNowText = 'new-from-now-text';
+			var mockFromNowText = originalMockFromNowText;
+			MockMoment.prototype.fromNow = function() {
+				return mockFromNowText;
+			}
+			MockMoment.prototype.diff = function() {
+				return minutesAgo;
+			}
+			var element = amTimeAgoElement({});
+			expect(element.text()).toBe(originalMockFromNowText);
+			mockFromNowText = newMockFromNowText;
+			$timeout.flush((whenChangeTime - 1) * 1000);
+			expect(element.text()).toBe(originalMockFromNowText);
+      $timeout.flush(1 * 1000);
+      expect(element.text()).toBe(newMockFromNowText);
+		};
+
+		it('should not change text until 3600 seconds passed when time is less than 300 minutes ago', function() {
+			testTimePassed(299, 3600);
+		});
+		it('should not change text until 300 seconds passed when time is less than 180 minutes ago', function() {
+			testTimePassed(180, 300);
+		});
+		it('should not change text until 30 seconds passed when time is less than 60 minutes ago', function() {
+			testTimePassed(60, 30);
+		});
+		it('should change text every second when time is less than a minute ago', function() {
+		  testTimePassed(1, 1);
+		});
+	});
+
+	it('should cancel the timer when the scope is destroyed', function () {
+		var scope = $rootScope.$new();
+		var element = amTimeAgoElement({}, null, scope);
+		spyOn($timeout, 'cancel').and.callThrough();
+		scope.$destroy();
+		expect($timeout.cancel).toHaveBeenCalled();
+	});
+
+	it('should update the date after the event amMoment:languageChange', function() {
+		var originalMockFromNowText = 'original-from-now-text';
+		var newMockFromNowText = 'new-from-now-text';
+		var mockFromNowText = originalMockFromNowText;
+		MockMoment.prototype.fromNow = function() {
+			return mockFromNowText;
+		}
+		var element = amTimeAgoElement({});
+		expect(element.text()).toBe(originalMockFromNowText);
+		var mockFromNowText = newMockFromNowText;
+		$rootScope.$broadcast('amMoment:languageChange');
+		expect(element.text()).toBe(newMockFromNowText);
 	});
 });
 
@@ -177,62 +266,6 @@ describe('module angularMoment', function () {
 	});
 
 	describe('am-time-ago directive', function () {
-		it('should update the span text as time passes', function (done) {
-			$rootScope.testDate = new Date(new Date().getTime() - 44000);
-			var element = angular.element('<div am-time-ago="testDate"></div>');
-			element = $compile(element)($rootScope);
-			$rootScope.$digest();
-			expect(element.text()).toBe('a few seconds ago');
-
-			var waitsInterval = setInterval(function () {
-				if (new Date().getTime() - $rootScope.testDate.getTime() <= 45000) {
-					return;
-				}
-
-				clearInterval(waitsInterval);
-				$timeout.flush();
-				$rootScope.$digest();
-				expect(element.text()).toBe('a minute ago');
-				done();
-			}, 50);
-		});
-
-		it('should remove the element text and cancel the timer when an empty string is given (#15)', function () {
-			$rootScope.testDate = new Date().getTime();
-			var element = angular.element('<div am-time-ago="testDate"></div>');
-			element = $compile(element)($rootScope);
-			$rootScope.$digest();
-			expect(element.text()).toBe('a few seconds ago');
-			$rootScope.testDate = '';
-			spyOn($timeout, 'cancel').and.callThrough();
-			$timeout.flush();
-			$rootScope.$digest();
-			expect($timeout.cancel).toHaveBeenCalled();
-			expect(element.text()).toBe('');
-		});
-
-		it('should not change the contents of the element until a date is given', function () {
-			$rootScope.testDate = null;
-			var element = angular.element('<div am-time-ago="testDate">Initial text</div>');
-			element = $compile(element)($rootScope);
-			$rootScope.$digest();
-			expect(element.text()).toBe('Initial text');
-			$rootScope.testDate = new Date().getTime();
-			$rootScope.$digest();
-			expect(element.text()).toBe('a few seconds ago');
-		});
-
-		it('should cancel the timer when the scope is destroyed', function () {
-			var scope = $rootScope.$new();
-			$rootScope.testDate = new Date();
-			var element = angular.element('<span am-time-ago="testDate"></span>');
-			element = $compile(element)(scope);
-			$rootScope.$digest();
-			spyOn($timeout, 'cancel').and.callThrough();
-			scope.$destroy();
-			expect($timeout.cancel).toHaveBeenCalled();
-		});
-
 		it('should generate a time string without suffix when configured to do so', function () {
 			amTimeAgoConfig.withoutSuffix = true;
 			$rootScope.testDate = new Date();
@@ -241,17 +274,6 @@ describe('module angularMoment', function () {
 			$rootScope.$digest();
 			expect(element.text()).toBe('a few seconds');
 		});
-
-		it('should generate update the text following a language change via amMoment.changeLanguage() method', function () {
-			$rootScope.testDate = new Date();
-			var element = angular.element('<span am-time-ago="testDate"></span>');
-			element = $compile(element)($rootScope);
-			$rootScope.$digest();
-			expect(element.text()).toBe('a few seconds ago');
-			amMoment.changeLanguage('fr');
-			expect(element.text()).toBe('il y a quelques secondes');
-		});
-
 		describe('am-without-suffix attribute', function () {
 			it('should generate a time string without suffix when true', function () {
 				$rootScope.testDate = new Date();
